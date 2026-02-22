@@ -84,7 +84,7 @@
   <div class="card">
     <h2 style="color:#93c5fd" id="t-dl-title"></h2>
     <div class="desc" id="t-dl-desc"></div>
-    <div class="row"><button class="bb" id="btn-pull"></button></div>
+    <div class="row"><button class="bb" id="btn-pull"></button><button class="bb" id="btn-copy-clip" style="margin-left:4px"></button></div>
     <div id="db-stats" style="margin-top:8px"></div>
   </div>
 
@@ -123,6 +123,7 @@ const TX = {
     dl_title: "📥 Télécharger depuis Supabase",
     dl_desc: "Téléchargez vos données Supabase en JSON pour les importer dans l'artifact via 💾.",
     pull: "📥 Télécharger tout", pulling: "⏳ Téléchargement...",
+    copy_clip: "📋 Copier pour l'artifact", copied_clip: "✅ Copié !",
     dg_title: "⚠️ Zone dangereuse",
     dg_desc: "Supprimer toutes les données de Supabase. Irréversible.",
     clear: "🗑️ Vider Supabase",
@@ -157,6 +158,7 @@ const TX = {
     dl_title: "📥 Download from Supabase",
     dl_desc: "Download your Supabase data as JSON to import into the artifact via 💾.",
     pull: "📥 Download all", pulling: "⏳ Downloading...",
+    copy_clip: "📋 Copy for artifact", copied_clip: "✅ Copied!",
     dg_title: "⚠️ Danger zone",
     dg_desc: "Delete all Supabase data. This is irreversible.",
     clear: "🗑️ Clear all Supabase data",
@@ -194,6 +196,7 @@ function setLang(l) {
   $("t-dl-title").textContent = t("dl_title");
   $("t-dl-desc").textContent = t("dl_desc");
   $("btn-pull").textContent = t("pull");
+  $("btn-copy-clip").textContent = t("copy_clip");
   $("t-dg-title").textContent = t("dg_title");
   $("t-dg-desc").textContent = t("dg_desc");
   $("btn-clear").textContent = t("clear");
@@ -316,6 +319,25 @@ $("btn-pull").onclick = async () => {
     log(`${t("dled")}: ${v.length} ${t("w")}, ${q.length} ${t("q")}, ${ts.length} ${t("te")}`, "ok");
   } catch(e) { log(`❌ ${e.message}`, "err"); }
   $("btn-pull").disabled=false; $("btn-pull").textContent=t("pull");
+};
+
+// Copy to clipboard (for pasting into artifact)
+$("btn-copy-clip").onclick = async () => {
+  $("btn-copy-clip").disabled=true; $("btn-copy-clip").textContent=t("pulling");
+  try {
+    const v = await sbGet("vocabulary"), q = await sbGet("quiz_history"), ts = await sbGet("custom_tenses");
+    const bk = {
+      vocabulary: v.map(x => ({ fr:x.fr, type:x.type, def:x.def, en:x.en, ex:x.ex, gender:x.gender, number:x.number, singular:x.singular, plural:x.plural, conj:x.conj, counterpart:x.counterpart, category:x.category, added:x.added })),
+      quizHistory: q.map(x => ({ quiz_type:x.quiz_type, score:{correct:x.score_correct,total:x.score_total}, answers:x.answers, date:x.completed_at })),
+      customTenses: ts.map(x => ({ key:x.key, fr:x.fr, en:x.en, core:x.core })),
+      exportDate: new Date().toISOString(), source:"supabase", version:"1.0"
+    };
+    await navigator.clipboard.writeText(JSON.stringify(bk));
+    $("btn-copy-clip").textContent = t("copied_clip");
+    log(`${t("copied_clip")} ${v.length} ${t("w")}, ${q.length} ${t("q")}, ${ts.length} ${t("te")}`, "ok");
+    setTimeout(() => { $("btn-copy-clip").textContent = t("copy_clip"); }, 2000);
+  } catch(e) { log(`❌ ${e.message}`, "err"); }
+  $("btn-copy-clip").disabled=false;
 };
 
 // Clear
